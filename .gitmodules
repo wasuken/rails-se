@@ -1,0 +1,3 @@
+[submodule "frondend"]
+	path = frondend
+	url = https://github.com/wasuken/rails-se-frontend
