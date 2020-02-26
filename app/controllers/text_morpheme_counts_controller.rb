@@ -1,2 +1,0 @@
-class TextMorphemeCountsController < ApplicationController
-end

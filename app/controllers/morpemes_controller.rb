@@ -1,2 +1,0 @@
-class MorpemesController < ApplicationController
-end
