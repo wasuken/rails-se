@@ -1,0 +1,2 @@
+class TextMorphemesController < ApplicationController
+end
