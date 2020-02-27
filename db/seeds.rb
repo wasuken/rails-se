@@ -5,4 +5,4 @@
 #
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
-Text.create(filepath: "./hoge/fuga.txt", contents: "hogehoge")
+Text.create_url_contents("https://blog.londone.net/page?id=194")

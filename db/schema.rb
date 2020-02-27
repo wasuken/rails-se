@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_02_26_102535) do
+ActiveRecord::Schema.define(version: 2020_02_26_102534) do
 
   create_table "morpemes", force: :cascade do |t|
     t.string "value"
@@ -18,23 +18,18 @@ ActiveRecord::Schema.define(version: 2020_02_26_102535) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "text_morpheme_counts", force: :cascade do |t|
+  create_table "text_morphemes", force: :cascade do |t|
+    t.integer "morpheme_id"
     t.integer "text_id"
     t.integer "count"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "text_morphemes", force: :cascade do |t|
-    t.integer "morphene_id"
-    t.integer "text_id"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-  end
-
   create_table "texts", force: :cascade do |t|
-    t.string "filepath"
     t.string "contents"
+    t.string "url"
+    t.string "title"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end

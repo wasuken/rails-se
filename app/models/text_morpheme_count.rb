@@ -1,2 +1,0 @@
-class TextMorphemeCount < ApplicationRecord
-end

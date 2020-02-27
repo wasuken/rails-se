@@ -3,6 +3,8 @@ class Api::V1::TextController < ApplicationController
     @texts = Text.all
     render json: {staus: 200,data: @texts}
   end
-  def store
+  def create
+    p params[:url]
+    Text.create_url_contents(params[:url]) if params[:url]
   end
 end
