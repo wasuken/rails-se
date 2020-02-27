@@ -1,2 +1,0 @@
-class Morpeme < ApplicationRecord
-end

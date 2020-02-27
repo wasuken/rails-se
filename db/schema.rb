@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_02_26_102534) do
+ActiveRecord::Schema.define(version: 2020_02_27_060603) do
 
-  create_table "morpemes", force: :cascade do |t|
+  create_table "morphemes", force: :cascade do |t|
     t.string "value"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
