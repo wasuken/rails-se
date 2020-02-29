@@ -15,25 +15,26 @@ class Text < ApplicationRecord
               .joins(:text_morphemes)
               .select("morphemes.value as value", "text_morphemes.count as cnt", "text_morphemes.*")
     texts_map = {}
+    text_in_including_query_size = nodes.drop(1).inject(Morpheme.where("value like ?", nodes.first)){|result, item|
+      result.union(Morpheme.where("value like ?", item))
+    }.distinct.joins(:text_morphemes).all.size
+    idf = Math.log(Text.all.size / text_in_including_query_size)
     nodes.map{|x| "%#{x}%"}.each do |v|
       t_ms.where("value like ?", v).all.each do |rec|
-        if texts_map[rec.text_id] != nil
-          newcnt = texts_map[rec.text_id][:cnt] + rec.count
-          texts_map[rec.text_id] = {rec: texts_map[rec.text_id][:rec], cnt: newcnt}
+        tf = (rec.count * rec.value.size).to_f / Text.find(rec.text_id).contents.size.to_f
+        tf_idf = tf * idf
+        p "tf = " + tf.to_s
+        p "idf = " + idf.to_s
+        p "tf_idf = " + tf_idf.to_s
+        if texts_map[rec.text_id]
+          new_point = texts_map[rec.text_id][:point] + tf_idf
+          texts_map[rec.text_id] = {rec: texts_map[rec.text_id][:rec], point: new_point}
         else
-          texts_map[rec.text_id] = {rec: rec, cnt: rec.cnt}
+          texts_map[rec.text_id] = {rec: rec, point: tf_idf}
         end
       end
     end
-    t_id_lst = texts_map.keys.sort{|a, b| texts_map[b][:cnt] <=> texts_map[a][:cnt]}
-    Text.where(id: t_id_lst).sort_by{|o| t_id_lst.index(o.id)}
-    # @t_ms = Morpheme
-    #           .joins(:text_morphemes)
-    #           .select("morphemes.value as value", "text_morphemes.count as cnt", "text_morphemes.*")
-    #           .where("value like ?", nodes.map{|x| "%#{x}%"})
-    #           .order(cnt: :desc)
-    #           .take(10)
-    #           .map(&:text_id)
-    # Text.where(id: @t_ms).sort_by{|o| @t_ms.index(o.id)}
+    t_id_lst = texts_map.keys.sort{|a, b| texts_map[b][:point] <=> texts_map[a][:point]}
+    Text.where(id: t_id_lst).sort_by{|o| t_id_lst.index(o.id)}.take(30)
   end
 end
