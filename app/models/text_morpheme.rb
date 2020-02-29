@@ -9,7 +9,7 @@ class TextMorpheme < ApplicationRecord
   def self.create_url_contents(url, contents, title)
     text = Text.create(url: url, contents: contents, title: title)
     nm = Natto::MeCab.new
-    morp_grp = nm.enum_parse(contents.gsub(/<.*?>/, ''))
+    morp_grp = nm.enum_parse(contents)
                  .select{|n| n.feature.include?('名詞')}
                  .select{|n| n.surface.size > 2 }
                  .map(&:surface)
@@ -24,7 +24,7 @@ class TextMorpheme < ApplicationRecord
     doc = Nokogiri::HTML(open(URI.encode(url)))
     title = doc.title
     contents = doc.css("body").first.text.gsub(/\n|\t/, ' ')
-    create_url_contents(url, contents, title)
+    create_url_contents(url, contents.gsub(/<.*?>/, ''), title)
   end
   def self.input_deep_contents(url)
     uri = URI.parse(url)
