@@ -5,21 +5,19 @@ require "open-uri"
 
 class Text < ApplicationRecord
   has_many :text_morphemes
-  def self.create_url_contents(url)
-    doc = Nokogiri::HTML(open(URI.encode(url)))
-    title = doc.title
-    contents = doc.css("body").first.text.gsub(/\n|\t/, ' ')
-    text = Text.create(url: url, contents: contents, title: title)
+  def self.search_query(query)
     nm = Natto::MeCab.new
-    morp_grp = nm.enum_parse(contents.gsub(/<.*?>/, ''))
-                 .select{|n| n.feature.include?('名詞')}
-                 .select{|n| n.surface.size > 2 }
-                 .map(&:surface)
-                 .group_by{|n| n }
-    morp_grp.each do |m|
-      mp = Morpheme.find_or_create_by(value: m[0])
-      p mp
-      TextMorpheme.create(morpheme_id: mp.id, text_id: text.id, count: m[1].size)
-    end
+    nodes = nm.enum_parse(query)
+              .select{|n| n.feature.include?('名詞')}
+              .select{|n| n.surface.size > 2 }
+              .map(&:surface)
+    @t_ms = Morpheme
+              .joins(:text_morphemes)
+              .select("morphemes.value as value", "text_morphemes.count as cnt", "text_morphemes.*")
+              .where("value like ?", nodes.map{|x| "%#{x}%"})
+              .order(cnt: :desc)
+              .take(10)
+              .map(&:text_id)
+    Text.where(id: @t_ms).sort_by{|o| @t_ms.index(o.id)}
   end
 end
