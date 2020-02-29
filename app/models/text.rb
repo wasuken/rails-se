@@ -15,9 +15,24 @@ class Text < ApplicationRecord
               .joins(:text_morphemes)
               .select("morphemes.value as value", "text_morphemes.count as cnt", "text_morphemes.*")
     texts_map = {}
-    text_in_including_query_size = nodes.drop(1).inject(Morpheme.where("value like ?", nodes.first)){|result, item|
-      result.union(Morpheme.where("value like ?", item))
-    }.distinct.joins(:text_morphemes).all.size
+
+    nodes_morp_id_lst = nodes.drop(1)
+        .inject(Morpheme.where("value like ?", nodes.first)){|result, item|
+      result + Morpheme.where("value like ?", item)
+    }.map(&:id).uniq
+
+    p nodes_morp_id_lst
+    text_in_including_query_size =
+      Text
+        .joins(:text_morphemes)
+        .where("morpheme_id in (?)", nodes_morp_id_lst)
+        .group(:text_id)
+        .count
+        .keys
+        .size
+
+    p text_in_including_query_size
+
     idf = Math.log(Text.all.size / text_in_including_query_size)
     nodes.map{|x| "%#{x}%"}.each do |v|
       t_ms.where("value like ?", v).all.each do |rec|
