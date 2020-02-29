@@ -3,12 +3,6 @@ require "natto"
 require "nokogiri"
 require "open-uri"
 
-class Proc
-  def self_curry
-    self.curry.call(self)
-  end
-end
-
 class Api::V1::TextController < ApplicationController
   def index
     @texts = Text.all.take(30)

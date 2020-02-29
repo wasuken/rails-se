@@ -4,20 +4,33 @@ require "natto"
 require "open-uri"
 require "zip"
 
+class Proc
+  def self_curry
+    self.curry.call(self)
+  end
+end
+
 class TextMorpheme < ApplicationRecord
   belongs_to :morpheme
   def self.create_url_contents(url, contents, title)
-    text = Text.create(url: url, contents: contents, title: title)
-    nm = Natto::MeCab.new
-    morp_grp = nm.enum_parse(contents)
-                 .select{|n| n.feature.include?('名詞')}
-                 .select{|n| n.surface.size > 2 }
-                 .map(&:surface)
-                 .group_by{|n| n }
-    morp_grp.each do |m|
-      mp = Morpheme.find_or_create_by(value: m[0])
-      p mp
-      TextMorpheme.create(morpheme_id: mp.id, text_id: text.id, count: m[1].size)
+    ActiveRecord::Base.transaction do
+      begin
+        text = Text.create(url: url, contents: contents, title: title)
+        nm = Natto::MeCab.new
+        morp_grp = nm.enum_parse(contents)
+                     .select{|n| n.feature.include?('名詞')}
+                     .select{|n| n.surface.size > 2 }
+                     .map(&:surface)
+                     .group_by{|n| n }
+        morp_grp.each do |m|
+          mp = Morpheme.find_or_create_by(value: m[0])
+          p mp
+          TextMorpheme.create(morpheme_id: mp.id, text_id: text.id, count: m[1].size)
+        end
+      rescue => er
+        p er
+        raise ActiveRecord::Rollback
+      end
     end
   end
   def self.input_single_url_contents(url)
@@ -63,10 +76,12 @@ class TextMorpheme < ApplicationRecord
         Tempfile.open([File.basename(entry.to_s), ext]) do |file|
           begin
             entry.extract(file.path) { true }
-            path = file.path.sub(/^\.\/|\//, '')
+            path = File.basename(file.path)
             url = "#{base_uri}#{path}"
             contents = file.read
-            create_url_contents(url, contents, File.basename(path))
+            create_url_contents(url,
+                                contents.force_encoding("UTF-8"),
+                                path.split(".").first.force_encoding("UTF-8"))
           ensure
             file.close!
           end
