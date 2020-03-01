@@ -2,6 +2,7 @@
 require "nokogiri"
 require "natto"
 require "open-uri"
+require 'digest/sha1'
 
 class Text < ApplicationRecord
   has_many :text_morphemes
@@ -38,9 +39,6 @@ class Text < ApplicationRecord
       t_ms.where("value like ?", v).all.each do |rec|
         tf = (rec.count * rec.value.size).to_f / Text.find(rec.text_id).contents.size.to_f
         tf_idf = tf * idf
-        p "tf = " + tf.to_s
-        p "idf = " + idf.to_s
-        p "tf_idf = " + tf_idf.to_s
         if texts_map[rec.text_id]
           new_point = texts_map[rec.text_id][:point] + tf_idf
           texts_map[rec.text_id] = {rec: texts_map[rec.text_id][:rec], point: new_point}
@@ -51,5 +49,9 @@ class Text < ApplicationRecord
     end
     t_id_lst = texts_map.keys.sort{|a, b| texts_map[b][:point] <=> texts_map[a][:point]}
     Text.where(id: t_id_lst).sort_by{|o| t_id_lst.index(o.id)}.take(30)
+  end
+  def self.create_auto_hash(url, title, contents)
+    dg = Digest::SHA1.hexdigest(title + contents)
+    Text.create(url: url, contents: contents, title: title, contents_hash: dg)
   end
 end

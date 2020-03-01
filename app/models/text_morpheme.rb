@@ -15,7 +15,7 @@ class TextMorpheme < ApplicationRecord
   def self.create_url_contents(url, contents, title)
     ActiveRecord::Base.transaction do
       begin
-        text = Text.create(url: url, contents: contents, title: title)
+        text = Text.create_auto_hash(url, title, contents)
         nm = Natto::MeCab.new
         morp_grp = nm.enum_parse(contents)
                      .select{|n| n.feature.include?('名詞')}

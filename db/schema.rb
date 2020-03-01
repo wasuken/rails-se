@@ -30,8 +30,10 @@ ActiveRecord::Schema.define(version: 2020_02_27_060603) do
     t.string "contents"
     t.string "url"
     t.string "title"
+    t.string "contents_hash"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["contents_hash"], name: "index_texts_on_contents_hash", unique: true
   end
 
 end
