@@ -17,19 +17,53 @@ class TextMorpheme < ApplicationRecord
       begin
         text = Text.create_auto_hash(url, title, contents)
         nm = Natto::MeCab.new
-        morp_grp = nm.enum_parse(contents)
-                     .select{|n| n.feature.include?('名詞')}
-                     .select{|n| n.surface.size > 2 }
+        morps = nm.enum_parse(contents)
+        # .select{|n| n.feature.include?('名詞')}
+        # .select{|n| n.surface.size > 2 }
+        morp_grp = morps
                      .map(&:surface)
                      .group_by{|n| n }
         morp_grp.each do |m|
+          # 現時点での結果。最後にidfとtf-idfを更新する。
           mp = Morpheme.find_or_create_by(value: m[0])
-          p mp
-          TextMorpheme.create(morpheme_id: mp.id, text_id: text.id, count: m[1].size)
+          text_in_including_query_size =
+            Text
+              .joins(:text_morphemes)
+              .where("morpheme_id = ?", mp.id)
+              .group(:text_id)
+              .count
+              .keys
+              .size
+          idf = Math.log(Text.count.to_f / text_in_including_query_size.to_f)
+          tf = m[1].size.to_f / nm.enum_parse(contents).size.to_f
+          tf_idf = tf * idf
+          TextMorpheme.create(morpheme_id: mp.id, text_id: text.id, tf: tf, idf: idf, score: tf_idf)
         end
       rescue => er
         p er
         raise ActiveRecord::Rollback
+      end
+    end
+  end
+  def self.update_tf_idf()
+    Morpheme.all.each do |m|
+      text_in_including_query_size =
+        Text
+          .joins(:text_morphemes)
+          .where("morpheme_id = ", m.id)
+          .group(:text_id)
+          .count
+          .keys
+          .size
+      idf = Math.log(Text.count.to_f / text_in_including_query_size.to_f)
+      TextMorpheme.all.each do |t|
+        TextMorpheme
+          .where("text_id = ?", t.id)
+          .where("morpheme_id = ?", m.id).each do |tm|
+          tm.idf = idf
+          tm.score = tm.tf * idf
+          tm.save
+        end
       end
     end
   end

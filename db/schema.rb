@@ -21,7 +21,9 @@ ActiveRecord::Schema.define(version: 2020_02_27_060603) do
   create_table "text_morphemes", force: :cascade do |t|
     t.integer "morpheme_id"
     t.integer "text_id"
-    t.integer "count"
+    t.float "tf"
+    t.float "idf"
+    t.float "score"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end

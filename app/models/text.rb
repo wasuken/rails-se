@@ -9,12 +9,13 @@ class Text < ApplicationRecord
   def self.search_query(query)
     nm = Natto::MeCab.new
     nodes = nm.enum_parse(query)
-              .select{|n| n.feature.include?('名詞')}
-              .select{|n| n.surface.size > 2 }
               .map(&:surface)
+              .select{|x| !x.size.zero?}
+    nodes.push(query)
+    p nodes
     t_ms = Morpheme
               .joins(:text_morphemes)
-              .select("morphemes.value as value", "text_morphemes.count as cnt", "text_morphemes.*")
+              .select("morphemes.value as value", "text_morphemes.*", "text_morphemes.*")
     texts_map = {}
 
     nodes_morp_id_lst = nodes.drop(1)
@@ -22,7 +23,6 @@ class Text < ApplicationRecord
       result + Morpheme.where("value like ?", item)
     }.map(&:id).uniq
 
-    p nodes_morp_id_lst
     text_in_including_query_size =
       Text
         .joins(:text_morphemes)
@@ -31,19 +31,18 @@ class Text < ApplicationRecord
         .count
         .keys
         .size
-
-    p text_in_including_query_size
-
+    if text_in_including_query_size.zero?
+      p "text_in_including_query_size is zero"
+      return
+    end
     idf = Math.log(Text.all.size / text_in_including_query_size)
     nodes.map{|x| "%#{x}%"}.each do |v|
       t_ms.where("value like ?", v).all.each do |rec|
-        tf = (rec.count * rec.value.size).to_f / Text.find(rec.text_id).contents.size.to_f
-        tf_idf = tf * idf
         if texts_map[rec.text_id]
-          new_point = texts_map[rec.text_id][:point] + tf_idf
+          new_point = texts_map[rec.text_id][:point] + rec.score
           texts_map[rec.text_id] = {rec: texts_map[rec.text_id][:rec], point: new_point}
         else
-          texts_map[rec.text_id] = {rec: rec, point: tf_idf}
+          texts_map[rec.text_id] = {rec: rec, point: rec.score}
         end
       end
     end

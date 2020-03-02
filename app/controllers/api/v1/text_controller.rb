@@ -19,5 +19,6 @@ class Api::V1::TextController < ApplicationController
     elsif params[:url]
       TextMorpheme.input_single_url_contents(params[:url])
     end
+    TextMorpheme.update_tf_idf()
   end
 end
